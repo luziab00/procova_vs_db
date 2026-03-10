@@ -44,3 +44,4 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
+check_cmdstan_toolchain()

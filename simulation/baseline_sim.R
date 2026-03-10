@@ -39,7 +39,7 @@ coeff_current <- list(
 
 treatment_effect <- 0.5
 
-df_historical_trial <- simulate_single_trial(
+df_historical <- simulate_single_trial(
   N = 200,
   covars_distr=covar_distr_bl ,
   coeff=coeff_hist, 
@@ -51,7 +51,7 @@ df_historical_trial <- simulate_single_trial(
   seed = NULL                 # optional integer for reproducibility
 )
 
-df_current_trial <- simulate_single_trial(
+df_current <- simulate_single_trial(
   N=200,
   covars_distr=covar_distr_bl ,
   coeff=coeff_current, 

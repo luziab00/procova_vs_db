@@ -128,8 +128,8 @@ dgm_score_raw <- function(df, coeff) {
   coeff$beta1 * df$X1 +
   coeff$beta2 * df$X2 +
   coeff$beta3 * df$X3 +
-  coeff$beta4 * df$X4
-  coeff$gamma1 * (df$X1^2) +
+  coeff$beta4 * df$X4 +
+  coeff$gamma1 * (df$X1^2-1) +
   coeff$gamma2 * sin(df$X3) +
   coeff$gamma3 * (df$X4 > 1) +
   coeff$gamma4 * (df$X1 * df$X5)
@@ -209,6 +209,8 @@ simulate_single_trial_standardized <- function(
     sigma = sigma
   )
 
+  df$S_raw<-s_raw
   df$trial_name <- trial_name
   df
 }
+

@@ -1,6 +1,6 @@
+# ANOVA, PROCOVA and ANCOVA analysis
 
 # generate prognostic models
-
 prognostic_model_superlearn<-function(
   df_historical,
   covar_names   = c("X1","X2","X3","X4", "X5"),  
@@ -66,18 +66,18 @@ prognostic_model_oracle_lm <- function(
 procova_analysis_glm <- function(
   df_historical, 
   df_current, 
-  model, 
+  model=NULL, 
+  oracle = FALSE,
   model_covar_names = NULL, 
   seed = NULL
 ){
 
 
-  if (model=="oracle"){
+  if (oracle){
     df_current$progn_score <- df_current$S
     prog_fit <- lm(y ~ S, data = df_historical)
 
   } else {
-
     prog_fit <- model(
       df_historical = df_historical,
       covar_names   = model_covar_names,
@@ -134,18 +134,45 @@ procova_analysis_glm <- function(
 }
 
 
+summ_treat_glm <- function(fit, treat_name = "XTreat", alpha = 0.05) {
+  cf <- summary(fit)$coef[treat_name, ]
+
+  est_mean <- cf["Estimate"]
+  est_sd   <- cf["Std. Error"]
+
+  tcrit <- qt(1 - alpha/2, df = fit$df.residual)
+  ci    <- est_mean + c(-1, 1) * tcrit * est_sd
+
+  # two-sided reject H0: beta = 0 if 0 not in CI
+  reject <- (ci[1] > 0) || (ci[2] < 0)
+
+  # frequentist analogue of P(beta > 0)
+  prob_gt0 <- pt(est_mean / est_sd, df = fit$df.residual)
+
+  c(
+    est_mean = as.numeric(est_mean),
+    est_sd   = as.numeric(est_sd),
+    ci_low   = ci[1],
+    ci_high  = ci[2],
+    reject   = as.numeric(reject),
+    post_prob_gt0 = as.numeric(prob_gt0)
+  )
+}
+
+
 
 # procova analysis using stand via brms
 procova_analysis_stan <- function(
   df_historical, 
   df_current, 
-  model, 
+  model = NULL, 
+  oracle = FALSE,
   model_covar_names = NULL, 
   seed = NULL
 ){
 
 
-  if (model=="oracle"){
+  if (oracle){
     df_current$progn_score <- df_current$S
     prog_fit <- lm(y ~ S, data = df_historical)
 
@@ -274,31 +301,5 @@ summ_treat_stan_brms <- function(fit, treat_name = "XTreat", alpha = 0.05) {
     ci_high  = ci[2],
     reject   = as.numeric(reject),
     post_prob_gt0 = post_prob_gt0
-  )
-}
-
-
-summ_treat_glm <- function(fit, treat_name = "XTreat", alpha = 0.05) {
-  cf <- summary(fit)$coef[treat_name, ]
-
-  est_mean <- cf["Estimate"]
-  est_sd   <- cf["Std. Error"]
-
-  tcrit <- qt(1 - alpha/2, df = fit$df.residual)
-  ci    <- est_mean + c(-1, 1) * tcrit * est_sd
-
-  # two-sided reject H0: beta = 0 if 0 not in CI
-  reject <- (ci[1] > 0) || (ci[2] < 0)
-
-  # frequentist analogue of P(beta > 0)
-  prob_gt0 <- pt(est_mean / est_sd, df = fit$df.residual)
-
-  c(
-    est_mean = as.numeric(est_mean),
-    est_sd   = as.numeric(est_sd),
-    ci_low   = ci[1],
-    ci_high  = ci[2],
-    reject   = as.numeric(reject),
-    post_prob_gt0 = as.numeric(prob_gt0)
   )
 }

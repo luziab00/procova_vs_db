@@ -30,3 +30,12 @@ parse_args <- function() {
     write.table(results, file = filepath, sep = ",", row.names = FALSE, col.names = FALSE, append = TRUE)
   }
 }
+
+quietly <- function(expr) {
+  val <- NULL
+  capture.output(
+    val <- force(expr),
+    file = NULL
+  )
+  val
+}
