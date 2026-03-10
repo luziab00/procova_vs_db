@@ -7,6 +7,8 @@ The simulations investigate the operating characteristics of several estimators 
 
 
 ## Repository Structure
+
+```
 ├── data_generating/
 │ Functions defining the data-generating mechanisms used in the simulations.
 │
@@ -33,4 +35,4 @@ The simulations investigate the operating characteristics of several estimators 
 │ Helper functions used across scripts and loading packages. 
 │
 └── README.md
-
+```
