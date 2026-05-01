@@ -5,3 +5,7 @@ lock/
 python/
 sandbox/
 staging/
+
+
+*.rds
+*.log
