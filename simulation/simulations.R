@@ -8,20 +8,20 @@ source("analysis/adaptive_lasso.R")
 source("analysis/bayesian_procova.R")
 
 covar_distr_hist <- list(
-  mu = c(X1 = 1, X2 = 0, X3 = 0, X4 = 0),
+  mu = c(X1 = 0, X2 = 0, X3 = 0, X4 = 0),
   sd = c(X1 = 1, X2 = 1, X3 = 1, X4 = 1),
   pX5 = 0.8
 )
 
 covar_distr_current <- list(
-  mu = c(X1 = 1, X2 = -1, X3 = 0, X4 = 0),
+  mu = c(X1 = 0, X2 = 0, X3 = 0, X4 = 0),
   sd = c(X1 = 1, X2 = 1, X3 = 1, X4 = 1),
   pX5 = 0.8
 )
 
 
 coeff_hist <- list(
-  beta0 = 0,
+  beta0 = -0.15,
   beta1 = 0.5,
   beta2 = -1,
   beta3 = -0.5,
@@ -34,7 +34,7 @@ coeff_hist <- list(
 
 
 coeff_current <- list(
-  beta0 = 0.5,
+  beta0 = 0,
   beta1 = 0.5,
   beta2 = -1,
   beta3 = -0.5,
@@ -45,10 +45,10 @@ coeff_current <- list(
   gamma4 = 1
 )
 
-treatment_effect <- 0.5
+treatment_effect <- 0
 
 
-nsim <- 1
+nsim <- 500
 seed <- 123
 set.seed(seed)
 
@@ -235,7 +235,7 @@ for (i in seq_len(nsim)) {
   comm_db_psborrow2 <- comm_prior_db_analysis_psborrow2(
     df_historical = df_h,
     df_current = df_c,
-    tau_rate = 0.01,
+    tau_rate = 0.001,
     seed = seed + 400000 + i,
     iter_warmup = 1000, 
     iter_sampling = 5000
@@ -260,6 +260,39 @@ for (i in seq_len(nsim)) {
     )
   )
   toc()
+
+
+    # ----- comm prior using psborrow2 -----
+  tic("psborrow2 COMM")
+  comm_db_psborrow2 <- comm_prior_db_analysis_psborrow2(
+    df_historical = df_h,
+    df_current = df_c,
+    tau_rate = 0.01,
+    seed = seed + 400000 + i,
+    iter_warmup = 1000, 
+    iter_sampling = 5000
+  )
+  toc()
+
+  tic("psborrow2 COMM - summary")
+  r_comm_01 <- rbind(
+    data.frame(
+      method = "psborrow2_01",
+      model = "COMM_DB",
+      t(summ_treat_comm_psborrow2(comm_db_psborrow2$fit_comm)),
+      row.names = NULL,
+      stringsAsFactors = FALSE
+    ),
+    data.frame(
+      method = "psborrow2_01",
+      model = "POOLING",
+      t(summ_treat_comm_psborrow2(comm_db_psborrow2$fit_full)),
+      row.names = NULL,
+      stringsAsFactors = FALSE
+    )
+  )
+  toc()
+
 
   # ----- adaptive lasso -----
   tic("Adaptive LASSO")
@@ -359,6 +392,7 @@ for (i in seq_len(nsim)) {
     r_stan,
     r_stan_oracle,
     r_comm,
+    r_comm_01,
     r_alasso,
     r_alasso_adj,
     r_sam,
@@ -388,15 +422,19 @@ plot_df <- res %>%
     bias = mean(bias),
     MSE = mean(se),
     reject = mean(reject),
-    emp_var = var(est_mean)
-  ) %>%
-  ungroup()
+    emp_var = var(est_mean),
+    n_sim = n(),
+    mcse_reject = sqrt(reject * (1 - reject) / n_sim),
+    reject_lower = pmax(0, reject - 1.96 * mcse_reject),
+    reject_upper = pmin(1, reject + 1.96 * mcse_reject),
+    .groups = "drop"
+  )
 
 plot_df <- plot_df %>%
   mutate(
-    method = unlist(method),
+    method = as.character(method),
     model = factor(
-      unlist(model),
+      as.character(model),
       levels = c(
         "NO_BORROWING",
         "ANOVA",
@@ -411,7 +449,7 @@ plot_df <- plot_df %>%
         "POOLING",
         "Bayesian_PROCOVA"
       )
-    ),
+    )
   )
 
 ggplot(plot_df, aes(x = model, y = bias, shape = method)) +
@@ -426,17 +464,15 @@ ggplot(plot_df, aes(x = model, y = MSE, shape = method)) +
   labs(y = "MSE", x = NULL) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-ggplot(plot_df, aes(x = model, y = reject, shape = method)) +
+ggplot(plot_df,
+                aes(x = model, y = reject,
+                    colour = model, shape = method)) +
   geom_point(size = 2) +
+  geom_errorbar(aes(ymin = reject_lower, ymax = reject_upper),
+                width = 0.2) +
   theme_bw() +
   labs(y = "Rej", x = NULL) +
-  geom_hline(
-    yintercept = 0.05,
-    linewidth = 0.5,
-    color = "red",
-    linetype = "dashed"
-  ) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  geom_hline(yintercept = 0.05, linewidth = 0.5, color = "red", linetype = "dashed")
 
 ggplot(plot_df, aes(x = model, y = emp_var, shape = method)) +
   geom_point(size = 2) +
@@ -461,13 +497,15 @@ p_mse <- ggplot(
   theme_bw() +
   labs(y = "MSE", x = NULL)
 
-p_rej <- ggplot(
-  plot_df,
-  aes(x = model, y = reject, colour = model, shape = method)
-) +
+p_rej <- ggplot(plot_df,
+                aes(x = model, y = reject,
+                    colour = model, shape = method)) +
   geom_point(size = 2) +
+  geom_errorbar(aes(ymin = reject_lower, ymax = reject_upper),
+                width = 0.2) +
   theme_bw() +
-  labs(y = "Rej", x = NULL)
+  labs(y = "Rej", x = NULL) +
+  geom_hline(yintercept = 0.05, linewidth = 0.5, color = "red", linetype = "dashed")
 
 p_empvar <- ggplot(
   plot_df,

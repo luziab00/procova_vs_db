@@ -1,16 +1,27 @@
-# commensurate prior dynamic borrowing 
+# =============================================================================
+# Commensurate Prior Dynamic Borrowing
+# =============================================================================
 
-
+# -----------------------------------------------------------------------------
+# (A) psborrow2 IMPLEMENTATION
+# -----------------------------------------------------------------------------
+# Fits both full-borrowing and commensurate models via Stan MCMC.
+# tau_rate controls the Gamma prior on tau: smaller tau_rate -> heavier tail
+# -> more prior mass on small tau -> more conservative borrowing on average.
+ 
 comm_prior_db_analysis_psborrow2 <- function(
   df_historical, 
   df_current, 
   seed = NULL,
-  tau_rate = 0.01,
+  tau_rate = 0.01, # Rate of Gamma(1, tau_rate) prior on tau. Small values
+                     # (e.g. 0.001) allow near-zero tau (less borrowing);
+                     # larger values concentrate tau away from 0 (more borrowing).
   iter_warmup = 1000, 
   iter_sampling = 10000
 ){
 
   # combine the dfs
+  # psborrow2 uses the ext flag to distinguish the two sources.
   df_all<-rbind(cbind(df_current, ext=0), cbind(df_historical, ext=1))
 
   # create matrix object
@@ -21,22 +32,25 @@ comm_prior_db_analysis_psborrow2 <- function(
   ext_flag_col = "ext"
 )
   
-  # create outcome 
+  # Outcome: y ~ N(mu, sigma^2)
+  #   Intercept (control mean) prior: N(0, 1000^2)  — vague
+  #   sigma prior:  half-Cauchy(0, 50)              — vague but proper
   outcome <- outcome_cont_normal(
     continuous_var = "y",
     baseline_prior = prior_normal(0, 1000),
     std_dev_prior = prior_half_cauchy(0, 50)
   )
 
-treatment <- treatment_details(
+  # Treatment effect beta_trt prior: N(0, 1000^2) — vague
+  treatment <- treatment_details(
     trt_flag_col = "XTreat",
     trt_prior    = prior_normal(0, 1000)
   )
 
 
 
-  # FULL BORROWING
-
+  # ---  FULL BORROWING  ---
+  # Historical and current control data are pooled as if from the same source.
   borrowing_full_obj <- borrowing_full(ext_flag_col = "ext")
 
   anls_full <- create_analysis_obj(
@@ -62,7 +76,11 @@ treatment <- treatment_details(
   )
 )
 
-  # COMMENSURATE
+  # ---  COMMENSURATE PRIOR  ---
+  # mu_c | tau ~ N(mu_h, 1/tau),   tau ~ Gamma(1, tau_rate)
+  # The posterior of tau adapts to the degree of consistency between the
+  # historical and current control data.
+  
   borrowing_comm_obj <- borrowing_hierarchical_commensurate(
     ext_flag_col = "ext",
     tau_prior    = prior_gamma(alpha = 1, beta = tau_rate)

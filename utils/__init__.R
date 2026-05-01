@@ -45,3 +45,8 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 check_cmdstan_toolchain()
+
+
+install.packages()
+
+?rstanarm

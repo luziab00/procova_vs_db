@@ -28,20 +28,22 @@ coeff_hist <- list(
   gamma1 = 0.5,
   gamma2 = -0.5,
   gamma3 = 0.5,
-  gamma4 = 1
+  gamma4 = 1, 
+  gamma5 = 0.5
 )
 
 
 coeff_current <- list(
   beta0 = 0,
   beta1 = 0.5,
-  beta2 = -0.5,
-  beta3 = -0.5,
+  beta2 = - 1,
+  beta3 = - 0.5,
   beta4 = 0.5,
-  gamma1 = -0.5,
+  gamma1 = 1,
   gamma2 = 0.5,
-  gamma3 = 1,
-  gamma4 = 1
+  gamma3 = 0.5,
+  gamma4 = - 0.5, 
+  gamma5 = - 1
 )
 
 treatment_effect <- 0
@@ -57,13 +59,21 @@ R2_target <- 0.25
 pi_value <- sqrt(R2_target) * sigma_total # since R^2 = pi^2 / sigma^2
 
 
+# Compute population-level standardization ONCE for this setting:
+score_std_setting_hist <- compute_score_standardization(
+  covars_distr = covar_distr_hist,
+  coeff = coeff_hist,
+  M = 200000,
+  seed = seed + 9999
+)
+
 df_historical_trial <- simulate_single_trial_standardized(
   N = 10000,
   covars_distr = covar_distr_hist,
   coeff = coeff_hist,
   sigma = sigma_total,
   pi = pi_value,
-  score_std = score_std_setting,
+  score_std = score_std_setting_hist,
   trial_name = "historical",
   treatment_arm = FALSE,
   tau = 0,
@@ -71,13 +81,24 @@ df_historical_trial <- simulate_single_trial_standardized(
   seed = seed + 100000 + i
 )
 
+
+# Compute population-level standardization ONCE for this setting:
+score_std_setting_current <- compute_score_standardization(
+  covars_distr = covar_distr_current,
+  coeff = coeff_current,
+  M = 200000,
+  seed = seed + 9999
+)
+
+
+
 df_current_trial <- simulate_single_trial_standardized(
   N = 10000,
   covars_distr = covar_distr_current,
   coeff = coeff_current,
   sigma = sigma_total,
   pi = pi_value,
-  score_std = score_std_setting,
+  score_std = score_std_setting_current,
   trial_name = "current",
   treatment_arm = TRUE,
   tau = treatment_effect,

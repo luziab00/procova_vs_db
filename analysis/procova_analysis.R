@@ -113,8 +113,7 @@ procova_analysis_glm <- function(
   # PROCOVA: ANCOVA + prognostic score
   f_procova <- as.formula(
     paste0(
-      "y", " ~ ", "XTreat", " + progn_score + ",
-      paste(model_covar_names, collapse = " + ")
+      "y", " ~ ", "XTreat", " + progn_score"
     )
   )
   
@@ -214,8 +213,7 @@ procova_analysis_stan <- function(
   # PROCOVA: ANCOVA + prognostic score
   f_procova <- as.formula(
     paste0(
-      "y", " ~ ", "XTreat", " + progn_score + ",
-      paste(model_covar_names, collapse = " + ")
+      "y", " ~ ", "XTreat", " + progn_score"
     )
   )
   

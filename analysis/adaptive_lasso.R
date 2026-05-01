@@ -102,7 +102,7 @@ summ_treat_adaptive_lasso <- function(fit, treat_name = "XTreat", alpha = 0.05) 
     ci_low   = ci[1],
     ci_high  = ci[2],
     reject   = as.numeric(reject),
-    prob_gt0 = as.numeric(prob_gt0)
+    post_prob_gt0 = as.numeric(prob_gt0)
   )
 }
 

@@ -15,7 +15,8 @@ coeff <- list(
   gamma1 = 0.5,
   gamma2 = 0.5,
   gamma3 = 0.5,
-  gamma4 = 0.5
+  gamma4 = 0.5, 
+  gamma5 = 0.5
 )
 
 
@@ -51,11 +52,12 @@ dgm_outcome <- function(
          coeff$beta4 * df$X4
 
   # nonlinear / interaction part:
-  # γ1 X1^2 + γ2 sin(X3) + γ3 I(X4 > 1) + γ4 X1 X5
+  # γ1 X1^2 + γ2 sin(X3) + γ3 I(X4 > 1) + γ4 X1 X2 + γ5 X5
   nonlinear <- coeff$gamma1 * (df$X1^2) +
                coeff$gamma2 * sin(df$X3) +
                coeff$gamma3 * (df$X4 > 1) +
-               coeff$gamma4 * (df$X1 * df$X5)
+               coeff$gamma4 * (df$X1 * df$X2) +
+               coeff$gamma5 * (df$X5)
 
   
   if (is.null(tau)) tau <- 0
@@ -132,7 +134,8 @@ dgm_score_raw <- function(df, coeff) {
   coeff$gamma1 * (df$X1^2-1) +
   coeff$gamma2 * sin(df$X3) +
   coeff$gamma3 * (df$X4 > 1) +
-  coeff$gamma4 * (df$X1 * df$X5)
+  coeff$gamma4 * (df$X1 * df$X2) +
+  coeff$gamma5 * (df$X5)
 }
 
 
